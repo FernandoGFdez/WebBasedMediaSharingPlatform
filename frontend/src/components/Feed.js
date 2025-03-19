@@ -2,7 +2,6 @@ import React from 'react';
 import Post from './Post';
 import '../styles/Feed.css';
 
-// Sample data for posts
 const samplePosts = [
   {
     id: 1,
@@ -16,10 +15,17 @@ const samplePosts = [
     id: 2,
     username: 'Sam',
     userAvatar: '...',
-    image: 'https://images.unsplash.com/photo-1739130524827-5fa364835c41?q=80&w=1664&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    image: 'https://images.fineartamerica.com/images-medium-large-5/new-york-city-lights-and-skyline-at-photography-by-steve-kelley-aka-mudpig.jpg',
     caption: 'City lights and urban vibes 🌆 #cityscape #urban',
     likes: 89
-  }
+  },
+  {
+    id: 3,
+    username: 'John',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
+    caption: 'Another adventure! #nature #photography',
+    likes: 203
+    }
 ];
 
 function Feed() {

@@ -4,17 +4,19 @@ import {
   ChatBubbleOutline as CommentIcon,
   Share as ShareIcon,
 } from '@mui/icons-material';
+import { Link } from 'react-router-dom';
 import '../styles/Post.css';
 
 function Post({ username, userAvatar, image, caption, likes }) {
   return (
     <div className="post">
       <div className="post-header">
-        <img 
-          className="post-avatar"
-          src={userAvatar}
-          alt={username}
-        />
+        <Link to={`/profile/${username}`}>
+          <img 
+            className="post-avatar"
+            src={userAvatar}
+          />
+        </Link>
         <span className="post-username">{username}</span>
       </div>
 
