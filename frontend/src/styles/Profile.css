@@ -41,27 +41,41 @@
 }
 
 .profile-posts {
-  margin-top: 40px;
+  margin-top: 32px;
+}
+
+.profile-posts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 28px;
+  margin-top: 16px;
 }
 
 .profile-post {
-  border-radius: 12px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   overflow: hidden;
-  background-color: #fafafa;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.profile-post img {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  min-height: 340px;
   width: 100%;
-  height: auto;
-  display: block;
 }
 
-.profile-post p {
-  padding: 10px;
-  font-size: 14px;
-  color: #555;
+.profile-post-image {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.profile-post-caption {
+  font-size: 1.05rem;
+  color: #333;
+  text-align: center;
+  margin: 0;
+  margin-top: 8px;
 }

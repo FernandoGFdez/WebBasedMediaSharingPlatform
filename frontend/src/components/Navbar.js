@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Search as SearchIcon, AddBox as AddBoxIcon, AccountCircle } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 import '../styles/Navbar.css';
 
 function Navbar() {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const navigate = useNavigate();
   
   const users = [
@@ -16,6 +19,39 @@ function Navbar() {
     { username: 'Jane', avatar: 'https://i.pravatar.cc/150?img=8' },
     { username: 'Sam', avatar: 'https://i.pravatar.cc/150?img=5' },
   ];
+
+  useEffect(() => {
+    // Listen for auth state changes
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+    };
+    getSession();
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    // Fetch profile for logged-in user
+    const fetchProfile = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', user.id)
+          .single();
+        if (!error) setProfile(data);
+        else setProfile(null);
+      } else {
+        setProfile(null);
+      }
+    };
+    fetchProfile();
+  }, [user]);
 
   const handleInputChange = (e) => {
     const value = e.target.value;
@@ -51,6 +87,14 @@ function Navbar() {
       setSearchTerm('');
     }
   }, [navigate]);
+
+  const handleProfileClick = () => {
+    if (user && profile && profile.username) {
+      navigate(`/profile/${profile.username}`);
+    } else {
+      navigate('/auth');
+    }
+  };
 
   return (
     <nav className="navbar">
@@ -100,7 +144,7 @@ function Navbar() {
           <Link to="/upload" className="icon-button">
             <AddBoxIcon />
           </Link>
-          <button className="icon-button">
+          <button className="icon-button" onClick={handleProfileClick}>
             <AccountCircle />
           </button>
         </div>
