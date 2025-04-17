@@ -17,7 +17,12 @@ function Post({ username, userAvatar, image, caption, likes }) {
             src={userAvatar}
           />
         </Link>
-        <span className="post-username">{username}</span>
+        <a
+          href={`/profile/${username}`}
+          style={{ color: 'black', textDecoration: 'none', cursor: 'pointer' }}
+        >
+          <span className="post-username">{username}</span>
+        </a>
       </div>
 
       <img

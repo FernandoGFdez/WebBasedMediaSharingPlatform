@@ -13,6 +13,10 @@ function Profile() {
   const [posts, setPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(true);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -67,6 +71,48 @@ function Profile() {
     fetchPosts();
   }, [profile]);
 
+  // Check if current user is following this profile
+  useEffect(() => {
+    const checkFollowing = async () => {
+      if (currentUser && profile && currentUser.id !== profile.id) {
+        const { data, error } = await supabase
+          .from('follows')
+          .select('id')
+          .eq('follower_id', currentUser.id)
+          .eq('following_id', profile.id)
+          .single();
+        setIsFollowing(!!data && !error);
+      } else {
+        setIsFollowing(false);
+      }
+    };
+    checkFollowing();
+  }, [currentUser, profile]);
+
+  // Fetch followers and following counts
+  useEffect(() => {
+    const fetchFollowCounts = async () => {
+      if (profile && profile.id) {
+        // Followers: people who follow this profile
+        const { count: followers, error: followersError } = await supabase
+          .from('follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('following_id', profile.id);
+        // Following: people this profile follows
+        const { count: following, error: followingError } = await supabase
+          .from('follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('follower_id', profile.id);
+        setFollowersCount(followersError ? 0 : followers || 0);
+        setFollowingCount(followingError ? 0 : following || 0);
+      } else {
+        setFollowersCount(0);
+        setFollowingCount(0);
+      }
+    };
+    fetchFollowCounts();
+  }, [profile]);
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate('/');
@@ -98,6 +144,45 @@ function Profile() {
     }
   };
 
+  // Follow handler
+  const handleFollow = async () => {
+    if (!currentUser) {
+      navigate('/auth');
+      return;
+    }
+    setFollowLoading(true);
+    try {
+      const { error } = await supabase.from('follows').insert({
+        follower_id: currentUser.id,
+        following_id: profile.id,
+      });
+      if (error) throw error;
+      setIsFollowing(true);
+    } catch (err) {
+      alert('Failed to follow: ' + (err.message || err));
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  // Unfollow handler
+  const handleUnfollow = async () => {
+    setFollowLoading(true);
+    try {
+      const { error } = await supabase
+        .from('follows')
+        .delete()
+        .eq('follower_id', currentUser.id)
+        .eq('following_id', profile.id);
+      if (error) throw error;
+      setIsFollowing(false);
+    } catch (err) {
+      alert('Failed to unfollow: ' + (err.message || err));
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
   if (loading) {
     return <div className="profile-container">Loading...</div>;
   }
@@ -124,6 +209,10 @@ function Profile() {
           />
           <div className="profile-info">
             <h2>{profile.username}</h2>
+            <div className="profile-stats" style={{ display: 'flex', gap: '24px', margin: '8px 0' }}>
+              <span><b>{followersCount}</b> Followers</span>
+              <span><b>{followingCount}</b> Following</span>
+            </div>
             <p>{profile.full_name}</p>
             <p>{profile.bio}</p>
           </div>
@@ -144,6 +233,19 @@ function Profile() {
               />
             </label>
           </div>
+        )}
+        {/* Follow/Unfollow button for other users */}
+        {!showSignOut && profile && (
+          <button
+            className="submit-button"
+            style={{ marginLeft: 16, minWidth: 120, opacity: followLoading ? 0.6 : 1 }}
+            onClick={isFollowing ? handleUnfollow : handleFollow}
+            disabled={followLoading}
+          >
+            {followLoading
+              ? (isFollowing ? 'Unfollowing...' : 'Following...')
+              : (isFollowing ? 'Unfollow' : 'Follow')}
+          </button>
         )}
       </div>
       <div className="profile-posts">

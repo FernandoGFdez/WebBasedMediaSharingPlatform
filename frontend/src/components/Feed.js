@@ -1,39 +1,67 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Post from './Post';
+import { supabase } from '../supabaseClient';
 import '../styles/Feed.css';
 
-const samplePosts = [
-  {
-    id: 1,
-    username: 'John',
-    userAvatar: '...',
-    image: 'https://images.unsplash.com/photo-1741290606668-c367b34d3d4a?q=80&w=1587&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    caption: 'Beautiful day in nature! 🌿 #nature #photography',
-    likes: 124
-  },
-  {
-    id: 2,
-    username: 'Sam',
-    userAvatar: '...',
-    image: 'https://images.fineartamerica.com/images-medium-large-5/new-york-city-lights-and-skyline-at-photography-by-steve-kelley-aka-mudpig.jpg',
-    caption: 'City lights and urban vibes 🌆 #cityscape #urban',
-    likes: 89
-  },
-  {
-    id: 3,
-    username: 'John',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
-    caption: 'Another adventure! #nature #photography',
-    likes: 203
-    }
-];
-
 function Feed() {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Get the current logged-in user
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+    };
+    getSession();
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setLoading(true);
+      let query = supabase
+        .from('posts')
+        .select('id, image_url, caption, created_at, user_id, profiles(username, avatar_url)')
+        .order('created_at', { ascending: false });
+      if (user) {
+        query = query.neq('user_id', user.id);
+      }
+      const { data, error } = await query;
+      if (!error && data) {
+        setPosts(data);
+      } else {
+        setPosts([]);
+      }
+      setLoading(false);
+    };
+    fetchPosts();
+  }, [user]);
+
   return (
     <div className="feed-container">
-      {samplePosts.map(post => (
-        <Post key={post.id} {...post} />
-      ))}
+      {loading ? (
+        <p>Loading feed...</p>
+      ) : posts.length === 0 ? (
+        <p>No posts yet. Be the first to upload!</p>
+      ) : (
+        posts.map(post => (
+          <Post
+            key={post.id}
+            username={post.profiles?.username || 'Unknown'}
+            userAvatar={post.profiles?.avatar_url || 'https://i.pravatar.cc/150?img=1'}
+            image={post.image_url}
+            caption={post.caption}
+            likes={post.likes || 0}
+          />
+        ))
+      )}
     </div>
   );
 }
