@@ -12,6 +12,7 @@ function Profile() {
   const [currentUser, setCurrentUser] = useState(null);
   const [posts, setPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(true);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -71,6 +72,32 @@ function Profile() {
     navigate('/');
   };
 
+  // Avatar upload handler
+  const handleAvatarChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file || !profile) return;
+    setAvatarUploading(true);
+    try {
+      // 1. Upload to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${profile.id}_${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      // 2. Get public URL
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      // 3. Update profile
+      const { error: updateError } = await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', profile.id);
+      if (updateError) throw updateError;
+      // 4. Refresh profile
+      setProfile({ ...profile, avatar_url: publicUrl });
+    } catch (err) {
+      alert('Failed to upload avatar: ' + (err.message || err));
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   if (loading) {
     return <div className="profile-container">Loading...</div>;
   }
@@ -87,15 +114,36 @@ function Profile() {
   return (
     <div className="profile-container">
       <div className="profile-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div className="profile-info">
-          <h2>{profile.username}</h2>
-          <p>{profile.full_name}</p>
-          <p>{profile.bio}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          {/* Avatar */}
+          <img
+            src={profile.avatar_url || 'https://i.pravatar.cc/150?img=1'}
+            alt={profile.username}
+            className="profile-avatar"
+            style={{ width: 120, height: 120, borderRadius: '50%', objectFit: 'cover' }}
+          />
+          <div className="profile-info">
+            <h2>{profile.username}</h2>
+            <p>{profile.full_name}</p>
+            <p>{profile.bio}</p>
+          </div>
         </div>
         {showSignOut && (
-          <button className="submit-button" onClick={handleSignOut} style={{ marginLeft: 'auto' }}>
-            Sign Out
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+            <button className="submit-button" onClick={handleSignOut} style={{ marginLeft: 'auto' }}>
+              Sign Out
+            </button>
+            <label className="submit-button" style={{ cursor: avatarUploading ? 'not-allowed' : 'pointer', opacity: avatarUploading ? 0.6 : 1 }}>
+              {avatarUploading ? 'Uploading...' : (profile.avatar_url ? 'Change Avatar' : 'Upload Avatar')}
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={handleAvatarChange}
+                disabled={avatarUploading}
+              />
+            </label>
+          </div>
         )}
       </div>
       <div className="profile-posts">

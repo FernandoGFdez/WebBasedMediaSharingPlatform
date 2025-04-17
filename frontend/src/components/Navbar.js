@@ -12,14 +12,6 @@ function Navbar() {
   const [profile, setProfile] = useState(null);
   const navigate = useNavigate();
   
-  const users = [
-    { username: 'John', avatar: 'https://i.pravatar.cc/150?img=3' },
-    { username: 'Josh', avatar: 'https://i.pravatar.cc/150?img=4' },
-    { username: 'Joan', avatar: 'https://i.pravatar.cc/150?img=7' },
-    { username: 'Jane', avatar: 'https://i.pravatar.cc/150?img=8' },
-    { username: 'Sam', avatar: 'https://i.pravatar.cc/150?img=5' },
-  ];
-
   useEffect(() => {
     // Listen for auth state changes
     const getSession = async () => {
@@ -53,15 +45,21 @@ function Navbar() {
     fetchProfile();
   }, [user]);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = async (e) => {
     const value = e.target.value;
     setSearchTerm(value);
 
     if (value) {
-      const filteredUsers = users.filter(user =>
-        user.username.toLowerCase().includes(value.toLowerCase())
-      );
-      setSearchResults(filteredUsers);
+      // Query Supabase for matching usernames
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username, avatar_url')
+        .ilike('username', `%${value}%`);
+      if (!error && data) {
+        setSearchResults(data);
+      } else {
+        setSearchResults([]);
+      }
     } else {
       setSearchResults([]);
     }
@@ -125,7 +123,7 @@ function Navbar() {
                   className="search-result-item"
                   onClick={() => handleUserSelect(user.username)}
                 >
-                  <img src={user.avatar} alt={user.username} className="result-avatar" />
+                  <img src={user.avatar_url || 'https://i.pravatar.cc/150?img=1'} alt={user.username} className="result-avatar" />
                   <span>{user.username}</span>
                 </div>
               ))}
