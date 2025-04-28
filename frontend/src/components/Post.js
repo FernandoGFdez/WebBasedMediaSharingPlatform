@@ -1,28 +1,43 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Favorite as FavoriteIcon,
   ChatBubbleOutline as CommentIcon,
   Share as ShareIcon,
 } from '@mui/icons-material';
-import { Link } from 'react-router-dom';
+import CommentsModal from './CommentsModal';
 import '../styles/Post.css';
 
-function Post({ username, userAvatar, image, caption, likes }) {
+function Post({ username, userAvatar, image, caption, likes, postId }) {
+  const [showComments, setShowComments] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLike = () => {
+    setIsLiked(!isLiked);
+  };
+
+  const handleProfileClick = () => {
+    navigate(`/profile/${username}`);
+  };
+
   return (
     <div className="post">
       <div className="post-header">
-        <Link to={`/profile/${username}`}>
-          <img 
-            className="post-avatar"
-            src={userAvatar}
-          />
-        </Link>
-        <a
-          href={`/profile/${username}`}
-          style={{ color: 'black', textDecoration: 'none', cursor: 'pointer' }}
+        <img 
+          className="post-avatar"
+          src={userAvatar}
+          alt={username}
+          onClick={handleProfileClick}
+          style={{ cursor: 'pointer' }}
+        />
+        <span 
+          className="post-username"
+          onClick={handleProfileClick}
+          style={{ cursor: 'pointer' }}
         >
-          <span className="post-username">{username}</span>
-        </a>
+          {username}
+        </span>
       </div>
 
       <img
@@ -32,24 +47,43 @@ function Post({ username, userAvatar, image, caption, likes }) {
       />
 
       <div className="post-actions">
-        <button className="action-button like-button">
+        <button 
+          className={`action-button ${isLiked ? 'liked' : ''}`}
+          onClick={handleLike}
+        >
           <FavoriteIcon />
         </button>
-        <button className="action-button">
+        <button 
+          className="action-button"
+          onClick={() => setShowComments(true)}
+        >
           <CommentIcon />
         </button>
       </div>
 
       <div className="post-likes">
-        {likes} likes
+        {isLiked ? likes : likes} likes
       </div>
 
       <div className="post-caption">
-        <span className="post-username-caption">{username}</span>
+        <span 
+          className="post-username-caption"
+          onClick={handleProfileClick}
+          style={{ cursor: 'pointer' }}
+        >
+          {username}
+        </span>
         {caption}
       </div>
+
+      {showComments && (
+        <CommentsModal
+          postId={postId}
+          onClose={() => setShowComments(false)}
+        />
+      )}
     </div>
   );
 }
 
-export default Post; 
+export default Post;

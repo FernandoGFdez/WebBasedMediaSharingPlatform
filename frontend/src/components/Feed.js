@@ -35,8 +35,10 @@ function Feed() {
       }
       const { data, error } = await query;
       if (!error && data) {
+        console.log('Fetched posts:', data);
         setPosts(data);
       } else {
+        console.error('Error fetching posts:', error);
         setPosts([]);
       }
       setLoading(false);
@@ -59,6 +61,7 @@ function Feed() {
             image={post.image_url}
             caption={post.caption}
             likes={post.likes || 0}
+            postId={post.id}
           />
         ))
       )}
