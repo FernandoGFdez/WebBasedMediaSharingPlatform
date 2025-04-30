@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import PostModal from './PostModal';
 import '../styles/Profile.css';
 
 function Profile() {
@@ -17,6 +18,7 @@ function Profile() {
   const [followLoading, setFollowLoading] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
+  const [selectedPost, setSelectedPost] = useState(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -257,7 +259,12 @@ function Profile() {
         ) : (
           <div className="profile-posts-grid">
             {posts.map(post => (
-              <div key={post.id} className="profile-post">
+              <div 
+                key={post.id} 
+                className="profile-post"
+                onClick={() => setSelectedPost(post)}
+                style={{ cursor: 'pointer' }}
+              >
                 <img src={post.image_url} alt={post.caption} className="profile-post-image" />
                 <p className="profile-post-caption">{post.caption}</p>
               </div>
@@ -265,6 +272,12 @@ function Profile() {
           </div>
         )}
       </div>
+      {selectedPost && (
+        <PostModal
+          post={selectedPost}
+          onClose={() => setSelectedPost(null)}
+        />
+      )}
     </div>
   );
 }
